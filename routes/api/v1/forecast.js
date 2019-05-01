@@ -21,27 +21,51 @@ router.get("/", function(req, res, next) {
         res.setHeader("Content-Type", "application/json");
         res.status(400).send({ error: "invalid search location" });
       }else{
-        makeCity(queryLocation)
-        .then(city => {
-          makeQuery(queryLocation, city)
-          .then(query => {
-            eval(pry.it)
-          })
+        Query.findOne({
+          where: {
+            query: queryLocation
+          },
+          include: 'city'
         })
         .then(query => {
-          eval(pry.it)
-          if(query){
-          }else{
-            console.log("query not created")
-          }
-        });
+          var city = query.city
+          //use city lat and long to get forecast
+        })
+        .catch(() => {
+          var locationData = geolocate(queryLocation);
+          //geolocate query
+            //check for existing city
+              //make new query and use city data for forecast
+              //or mmake new city and query and use city data for forecast
+        })
       }
-    });
+      // }
+      //   makeCity(queryLocation)
+      //   .then(city => {
+      //     makeQuery(queryLocation, city)
+      //     .then(query => {
+      //       eval(pry.it)
+      //     })
+      //   })
+      //   .then(query => {
+      //     eval(pry.it)
+      //     if(query){
+      //     }else{
+      //       console.log("query not created")
+      //     }
+      //   });
+      // }
+    })
   }else{
     res.setHeader("Content-Type", "application/json");
     res.status(401).send({ error: "unauthorized" });
   };
 });
+
+function geolocate(query){
+  eval(pry.it)
+  //geocode_service.geocode(@search_location)
+}
 
 function makeCity(query){
   //var lat = geodata()
@@ -88,10 +112,6 @@ function geodata(){
   return data;
 }
 
-function geolocation(){
-  eval(pry.it)
 
-  //geocode_service.geocode(@search_location)
-}
 
 module.exports = router;
