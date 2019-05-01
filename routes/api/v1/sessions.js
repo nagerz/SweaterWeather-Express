@@ -2,14 +2,13 @@ var express = require("express");
 var router = express.Router();
 var User = require('../../../models').User;
 const bcrypt = require('bcrypt');
-//const saltRounds = 10;
 
 router.post("/", function(req, res, next) {
   if (req.body.email){
     if (req.body.password){
       User.findOne({
         where: {
-          email: req.body.email
+          email: req.body.email.toLowerCase()
         }
       }).then(function(user){
         if(!user){
