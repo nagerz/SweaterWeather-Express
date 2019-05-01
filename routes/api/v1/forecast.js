@@ -7,6 +7,7 @@ var pry = require('pryjs')
 //eval(pry.it)
 
 router.get("/", function(req, res, next) {
+  let queryLocation = req.query.location;
   if (req.body.api_key){
     User.findOne({
       where: {
@@ -16,20 +17,23 @@ router.get("/", function(req, res, next) {
       if(!user){
         res.setHeader("Content-Type", "application/json");
         res.status(401).send({ error: "unauthorized" });
-      }else if(!req.query.location){
+      }else if(!queryLocation){
         res.setHeader("Content-Type", "application/json");
         res.status(400).send({ error: "invalid search location" });
       }else{
-        Query.findOrCreate({
-          where: {query: req.query.location},
-          defaults: {CityId: makeCity(req.query.location)}
-        }).then(function(location, created){
-          eval(pry.it)
-          if(created){
+        makeCity(queryLocation)
+        .then(city => {
+          makeQuery(queryLocation, city)
+          .then(query => {
             eval(pry.it)
+          })
+        })
+        .then(query => {
+          eval(pry.it)
+          if(query){
           }else{
             console.log("query not created")
-          };
+          }
         });
       }
     });
@@ -44,20 +48,33 @@ function makeCity(query){
   // var long = geodata().geo_long
   // var city = geodata().geo_city
   // var state = geodata().geo_city
+  // return new Promise((resolve, reject) {
+    return City.create({
+      city: query,
+      state: "test",
+      lat: 1,
+      long: 1
+    })
+    .then(function(city){
+      return (city);
+    })
+    .catch(error => {
+      eval(pry.it)
+      return (error);
+    })
+};
 
-  City.create({
-    city: query,
-    state: "test",
-    lat: 1,
-    long: 1
-  }).then(function(city, created){
+function makeQuery(queryLocation, city){
+  Query.findOrCreate({
+    where: {query: queryLocation, CityId: city.id}
+    })
+  .then(query => {
+    return (query);
+  })
+  .catch(error => {
     eval(pry.it)
-
-    return city;
-  });
-  eval(pry.it)
-
-  return test;
+    return (error);
+  })
 };
 
 function geodata(){
