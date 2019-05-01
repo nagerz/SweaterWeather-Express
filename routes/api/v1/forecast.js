@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var User = require('../../../models').User;
+var pry = require('pryjs')
 
 router.get("/", function(req, res, next) {
   if (req.body.api_key){
@@ -13,7 +14,7 @@ router.get("/", function(req, res, next) {
         res.setHeader("Content-Type", "application/json");
         res.status(401).send({ error: "unauthorized" });
       }else{
-
+        eval(pry.it)
       }
     });
   }else{
