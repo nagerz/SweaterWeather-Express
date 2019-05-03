@@ -1,8 +1,10 @@
-var express = require("express");
+var express = require('express');
 var router = express.Router();
 var User = require('../../../models').User;
 var Query = require('../../../models').Query;
 var City = require('../../../models').City;
+var Forecast = require('../../../pojos/forecast');
+
 var pry = require('pryjs');
 const fetch = require('node-fetch');
 //eval(pry.it)
@@ -55,15 +57,9 @@ router.get("/", function(req, res, next) {
                   //use city for forecast
                 })
               }else{
-                getForecast(city)
-                .then(data => {
-                  //start here
-                  //format data to match request
-                })
-                .catch(error => {
-                  res.setHeader("Content-Type", "application/json");
-                  res.status(400).send({ error: error });
-                })
+                var forecast = new Forecast(city);
+                res.setHeader("Content-Type", "application/json");
+                res.status(200).send(forecast.data);
               }
             })
             .catch(() => {
@@ -110,24 +106,7 @@ function geolocate(query){
   })
 };
 
-function getForecast(city){
-  let service = "https://api.darksky.net/forecast/"
-  let key = process.env.DARKSKY_SECRET_KEY
-  let lat = city.lat
-  let long = city.long
-  let url = service + key + "/" + lat + "," + long
 
-  return new Promise((resolve, reject) => {
-    fetch(url)
-    .then(response => {
-      if(response.status == 200){
-        resolve(response.json())
-      }else{
-        reject("bad request")
-      }
-    })
-  })
-};
 
 // function makeCity(query){
 //     return City.create({
