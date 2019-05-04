@@ -28,11 +28,15 @@ router.get("/", function(req, res, next) {
           where: {
             query: queryLocation
           },
-          include: 'city'
+          include: 'City'
         })
         .then(query => {
-          let city = query.city
-          //use city for forecast
+          var forecast = new Forecast();
+          return forecast.updateForecast(query.City)
+        })
+        .then(forecast => {
+          res.setHeader("Content-Type", "application/json");
+          res.status(200).send(forecast.data);
         })
         .catch(() => {
           geolocate(queryLocation)
@@ -41,7 +45,9 @@ router.get("/", function(req, res, next) {
             geodata["lat"] = data.results[0].geometry.location.lat
             geodata["long"] = data.results[0].geometry.location.lng
             geodata["city"] = data.results[0].address_components[0].long_name
-            geodata["state"] = data.results[0].address_components[2].short_name
+            if (data.results[0].address_components[2] != undefined){
+              geodata["state"] = data.results[0].address_components[2].short_name
+            }
             City.findOne({
               where: {city: geodata.city}
             })
@@ -52,31 +58,45 @@ router.get("/", function(req, res, next) {
                   state: geodata.state,
                   lat: geodata.lat,
                   long: geodata.long,
-                }) //make Query with city
+                })
                 .then(city => {
-                  //use city for forecast
+                  Query.create({
+                    query: queryLocation,
+                    CityId: city.id
+                  })
+                  .then(query => {
+                    var forecast = new Forecast();
+                    return forecast.updateForecast(city)
+                  })
+                  .then(forecast => {
+                    res.setHeader("Content-Type", "application/json");
+                    res.status(200).send(forecast.data);
+                  })
                 })
               }else{
-                var forecast = new Forecast(city);
-                res.setHeader("Content-Type", "application/json");
-                res.status(200).send(forecast.data);
+                var forecast = new Forecast();
+                forecast.updateForecast(city)
+                .then(forecast => {
+                  res.setHeader("Content-Type", "application/json");
+                  res.status(200).send(forecast.data);
+                })
               }
             })
-            .catch(() => {
-              City.create({
-                city: geodata.city,
-                state: geodata.state,
-                lat: geodata.lat,
-                long: geodata.long,
-              })
-              .then(city => {
-                //use city for forecast
-              })
-            })
+            // .catch(() => {
+            //   City.create({
+            //     city: geodata.city,
+            //     state: geodata.state,
+            //     lat: geodata.lat,
+            //     long: geodata.long,
+            //   })
+            //   .then(city => {
+            //     //use city for forecast
+            //   })
+            // })
           })
           .catch(error => {
             res.setHeader("Content-Type", "application/json");
-            res.status(400).send({ error: error });
+            res.status(400).send({ error: "geolocation failure" });
           })
         })
       }
