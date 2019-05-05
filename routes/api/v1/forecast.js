@@ -22,7 +22,7 @@ router.get("/", function(req, res, next) {
         res.status(401).send({ error: "unauthorized" });
       }else if(!queryLocation){
         res.setHeader("Content-Type", "application/json");
-        res.status(400).send({ error: "invalid search location" });
+        res.status(400).send({ error: "missing search location" });
       }else{
         Query.findOne({
           where: {
@@ -96,7 +96,7 @@ router.get("/", function(req, res, next) {
           })
           .catch(error => {
             res.setHeader("Content-Type", "application/json");
-            res.status(400).send({ error: "geolocation failure" });
+            res.status(400).send({ error: "invalid search location"});
           })
         })
       }
