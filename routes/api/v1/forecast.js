@@ -74,8 +74,14 @@ router.get("/", function(req, res, next) {
                   })
                 })
               }else{
-                var forecast = new Forecast();
-                forecast.updateForecast(city)
+                Query.create({
+                  query: queryLocation,
+                  CityId: city.id
+                })
+                .then(query => {
+                  var forecast = new Forecast();
+                  return forecast.updateForecast(city)
+                })
                 .then(forecast => {
                   res.setHeader("Content-Type", "application/json");
                   res.status(200).send(forecast.data);
