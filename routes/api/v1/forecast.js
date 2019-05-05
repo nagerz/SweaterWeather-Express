@@ -82,17 +82,6 @@ router.get("/", function(req, res, next) {
                 })
               }
             })
-            // .catch(() => {
-            //   City.create({
-            //     city: geodata.city,
-            //     state: geodata.state,
-            //     lat: geodata.lat,
-            //     long: geodata.long,
-            //   })
-            //   .then(city => {
-            //     //use city for forecast
-            //   })
-            // })
           })
           .catch(error => {
             res.setHeader("Content-Type", "application/json");
@@ -125,47 +114,5 @@ function geolocate(query){
     })
   })
 };
-
-
-
-// function makeCity(query){
-//     return City.create({
-//       city: query,
-//       state: "test",
-//       lat: 1,
-//       long: 1
-//     })
-//     .then(function(city){
-//       return (city);
-//     })
-//     .catch(error => {
-//       eval(pry.it)
-//       return (error);
-//     })
-// };
-//
-// function makeQuery(queryLocation, city){
-//   Query.findOrCreate({
-//     where: {query: queryLocation, CityId: city.id}
-//     })
-//   .then(query => {
-//     return (query);
-//   })
-//   .catch(error => {
-//     eval(pry.it)
-//     return (error);
-//   })
-// };
-//
-// function geodata(){
-//   eval(pry.it)
-//
-//   var data = {};
-//   // data[:geo_lat] = geolocation()[:results][0][:geometry][:location][:lat]
-//   // data[:geo_long] = geolocation()[:results][0][:geometry][:location][:lng]
-//   // data[:geo_city] = geolocation()[:results][0][:address_components][0][:long_name]
-//   // data[:geo_state] = geolocation()[:results][0][:address_components][2][:short_name]
-//   return data;
-// }
 
 module.exports = router;
