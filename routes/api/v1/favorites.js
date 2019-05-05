@@ -186,6 +186,39 @@ router.post("/", function(req, res, next) {
   }
 });
 
+router.get("/", function(req, res, next) {
+  if (req.body.api_key){
+    User.findOne({
+      where: {
+        api_key: req.body.api_key
+      },
+      include: 'City'
+    })
+    .then(user => {
+      if(!user){
+        res.setHeader("Content-Type", "application/json");
+        res.status(401).send({ error: "unauthorized" });
+      }else{
+        if(user.City.length == 0){
+          res.setHeader("Content-Type", "application/json");
+          res.status(400).send({ error: "No cities have been favorited" });
+        }else{
+          res.setHeader("Content-Type", "application/json");
+          res.status(401).send({ error: "list favorites" });
+        }
+      }
+    })
+    .catch(error => {
+      //user findone failure catch
+      res.setHeader("Content-Type", "application/json");
+      res.status(400).send({ error: "missing search location" });
+    })
+  }else{
+    res.setHeader("Content-Type", "application/json");
+    res.status(401).send({ error: "unauthorized" });
+  }
+});
+
 function geolocate(query){
   let service = "https://maps.googleapis.com/maps/api/geocode/json?address="
   let address = query
