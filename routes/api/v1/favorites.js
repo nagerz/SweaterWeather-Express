@@ -3,6 +3,7 @@ var router = express.Router();
 var User = require('../../../models').User;
 var Query = require('../../../models').Query;
 var City = require('../../../models').City;
+var Favorite = require('../../../models').Favorite;
 var Forecast = require('../../../pojos/forecast');
 
 var pry = require('pryjs');
@@ -15,7 +16,8 @@ router.post("/", function(req, res, next) {
     User.findOne({
       where: {
         api_key: req.body.api_key
-      }
+      },
+      include: 'City'
     })
     .then(user => {
       if(!user){
@@ -25,7 +27,111 @@ router.post("/", function(req, res, next) {
         res.setHeader("Content-Type", "application/json");
         res.status(400).send({ error: "missing search location" });
       }else{
+        Query.findOne({
+          where: {
+            query: queryLocation
+          },
+          include: 'City'
+        })
+        .then(query => {
+          if(!query){
+            res.setHeader("Content-Type", "application/json");
+            res.status(401).send({ error: "no existing query" });
+          }else{
+            Favorite.findOne({
+              where: {
+                UserId: user.id,
+                CityId: query.City.id
+              }
+            })
+            .then(favorite => {
+              if (!favorite){
+                Favorite.create({
+                  UserId: user.id,
+                  CityId: query.City.id
+                })
+                .then(favorite => {
+                  if (query.City.state){
+                    var location = query.City.city + ", " + query.City.state
+                  }else{
+                    var location = query.City.city
+                  }
+                  res.setHeader("Content-Type", "application/json");
+                  res.status(200).send({"message": location + " has been added to your favorites"});
+                })
+                .catch(error => {
+                  res.setHeader("Content-Type", "application/json");
+                  res.status(500).send({error})
+                })
+              }else{
+                res.setHeader("Content-Type", "application/json");
+                res.status(401).send({ error: "Already favorited" });
+              }
+            })
+          }
+        })
+        .catch(error => {
+          res.setHeader("Content-Type", "application/json");
+          res.status(400).send({ error: "query find failure"});
+        })
+        //.catch(() => {
+          //failed to create favorite. already favorited?
+          // geolocate(queryLocation)
+          // .then(data => {
+          //   var geodata = {}
+          //   geodata["lat"] = data.results[0].geometry.location.lat
+          //   geodata["long"] = data.results[0].geometry.location.lng
+          //   geodata["city"] = data.results[0].address_components[0].long_name
+          //   if (data.results[0].address_components[2] != undefined){
+          //     geodata["state"] = data.results[0].address_components[2].short_name
+          //   }
+          //   City.findOne({
+          //     where: {city: geodata.city}
+          //   })
+          //   .then(city => {
+          //     if(city == null){
+          //       City.create({
+          //         city: geodata.city,
+          //         state: geodata.state,
+          //         lat: geodata.lat,
+          //         long: geodata.long,
+          //       })
+          //       .then(city => {
+          //         Query.create({
+          //           query: queryLocation,
+          //           CityId: city.id
+          //         })
+          //         .then(query => {
+          //           var forecast = new Forecast();
+          //           return forecast.updateForecast(city)
+          //         })
+          //         .then(forecast => {
+          //           res.setHeader("Content-Type", "application/json");
+          //           res.status(200).send(forecast.data);
+          //         })
+          //       })
+          //     }else{
+          //       Query.create({
+          //         query: queryLocation,
+          //         CityId: city.id
+          //       })
+          //       .then(query => {
+          //         var forecast = new Forecast();
+          //         return forecast.updateForecast(city)
+          //       })
+          //       .then(forecast => {
+          //         res.setHeader("Content-Type", "application/json");
+          //         res.status(200).send(forecast.data);
+          //       })
+          //     }
+          //   })
+          //})
+
       }
+    })
+    .catch(error => {
+
+      //user findone failure catch
     })
   }else{
     res.setHeader("Content-Type", "application/json");

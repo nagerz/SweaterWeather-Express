@@ -8,6 +8,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   City.associate = function(models) {
     City.hasMany(models.Query)
+    City.hasMany(models.Favorite)
+    City.belongsToMany(models.User, { through: 'Favorite', as: 'User' });
   };
   return City;
 };
