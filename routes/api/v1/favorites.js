@@ -201,10 +201,16 @@ router.get("/", function(req, res, next) {
       }else{
         if(user.City.length == 0){
           res.setHeader("Content-Type", "application/json");
-          res.status(400).send({ error: "No cities have been favorited" });
+          res.status(200).send( "No cities have been favorited" );
         }else{
+          var userFavorites = []
+          for (let city of user.City){
+            favoriteInfo = {}
+            favoriteInfo["location"] = city.city
+            userFavorites.push(favoriteInfo)
+          }
           res.setHeader("Content-Type", "application/json");
-          res.status(401).send({ error: "list favorites" });
+          res.status(200).send(userFavorites);
         }
       }
     })
