@@ -114,10 +114,10 @@ router.post("/", function(req, res, next) {
                           CityId: query.City.id
                         })
                         .then(favorite => {
-                          if (query.City.state){
-                            var location = query.City.city + ", " + query.City.state
+                          if (city.state){
+                            var location = city.city + ", " + city.state
                           }else{
-                            var location = query.City.city
+                            var location = city.city
                           }
                           res.setHeader("Content-Type", "application/json");
                           res.status(200).send({"message": location + " has been added to your favorites"});
@@ -219,6 +219,163 @@ router.get("/", function(req, res, next) {
       //user findone failure catch
       res.setHeader("Content-Type", "application/json");
       res.status(400).send({ error: "missing search location" });
+    })
+  }else{
+    res.setHeader("Content-Type", "application/json");
+    res.status(401).send({ error: "unauthorized" });
+  }
+});
+
+router.delete("/", function(req, res, next) {
+  let queryLocation = req.query.location;
+  if (req.body.api_key){
+    User.findOne({
+      where: {
+        api_key: req.body.api_key
+      },
+      include: 'City'
+    })
+    .then(user => {
+      if(!user){
+        res.setHeader("Content-Type", "application/json");
+        res.status(401).send({ error: "unauthorized" });
+      }else if(!queryLocation){
+        res.setHeader("Content-Type", "application/json");
+        res.status(400).send({ error: "missing search location" });
+      }else{
+        Query.findOne({
+          where: {
+            query: queryLocation
+          },
+          include: 'City'
+        })
+        .then(query => {
+          if(!query){
+            geolocate(queryLocation)
+            .then(data => {
+              var geodata = {}
+              geodata["lat"] = data.results[0].geometry.location.lat
+              geodata["long"] = data.results[0].geometry.location.lng
+              geodata["city"] = data.results[0].address_components[0].long_name
+              if (data.results[0].address_components[2] != undefined){
+                geodata["state"] = data.results[0].address_components[2].short_name
+              }
+              City.findOne({
+                where: {city: geodata.city}
+              })
+              .then(city => {
+                if(city == null){
+                  City.create({
+                    city: geodata.city,
+                    state: geodata.state,
+                    lat: geodata.lat,
+                    long: geodata.long,
+                  })
+                  .then(city => {
+                    Query.create({
+                      query: queryLocation,
+                      CityId: city.id
+                    })
+                    .then(query => {
+                      Favorite.destroy({
+                        where: {
+                          UserId: user.id,
+                          CityId: city.id
+                        }
+                      })
+                      .then(favorite => {
+                        if(favorite == 0){
+                          res.setHeader("Content-Type", "application/json");
+                          res.status(400).send({"message": "Location is not currently favorited"});
+                        }else{
+                          if (city.state){
+                            var location = city.city + ", " + city.state
+                          }else{
+                            var location = city.city
+                          }
+                          res.setHeader("Content-Type", "application/json");
+                          res.status(204).send({"message": location + " has been removed from your favorites"});
+                        }
+                      })
+                      .catch(error => {
+                        res.setHeader("Content-Type", "application/json");
+                        res.status(500).send({error})
+                      })
+                    })
+                  })
+                }else{
+                  Query.create({
+                    query: queryLocation,
+                    CityId: city.id
+                  })
+                  .then(query => {
+                    Favorite.destroy({
+                      where: {
+                        UserId: user.id,
+                        CityId: city.id
+                      }
+                    })
+                    .then(favorite => {
+                      if(favorite == 0){
+                        res.setHeader("Content-Type", "application/json");
+                        res.status(400).send({"message": "Location is not currently favorited"});
+                      }else{
+                        if (city.state){
+                          var location = city.city + ", " + city.state
+                        }else{
+                          var location = city.city
+                        }
+                        res.setHeader("Content-Type", "application/json");
+                        res.status(200).send({"message": location + " has been removed from your favorites"});
+                      }
+                    })
+                    .catch(error => {
+                      res.setHeader("Content-Type", "application/json");
+                      res.status(500).send({error})
+                    })
+                  })
+                }
+              })
+            })
+            .catch(error => {
+              res.setHeader("Content-Type", "application/json");
+              res.status(400).send({ error: "invalid search location"});
+            })
+          }else{
+            Favorite.destroy({
+              where: {
+                UserId: user.id,
+                CityId: query.City.id
+              }
+            })
+            .then(favorite => {
+              if(favorite == 0){
+                res.setHeader("Content-Type", "application/json");
+                res.status(400).send({"message": "Location is not currently favorited"});
+              }else{
+                if (query.City.state){
+                  var location = query.City.city + ", " + query.City.state
+                }else{
+                  var location = query.City.city
+                }
+                res.setHeader("Content-Type", "application/json");
+                res.status(200).send({"message": location + " has been removed from your favorites"});
+              }
+            })
+            .catch(error => {
+              res.setHeader("Content-Type", "application/json");
+              res.status(500).send({error})
+            })
+          }
+        })
+        .catch(error => {
+          res.setHeader("Content-Type", "application/json");
+          res.status(400).send({ error: "query find failure"});
+        })
+      }
+    })
+    .catch(error => {
+      //user findone failure catch
     })
   }else{
     res.setHeader("Content-Type", "application/json");
