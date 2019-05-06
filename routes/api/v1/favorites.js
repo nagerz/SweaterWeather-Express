@@ -5,6 +5,7 @@ var Query = require('../../../models').Query;
 var City = require('../../../models').City;
 var Favorite = require('../../../models').Favorite;
 var Forecast = require('../../../pojos/forecast');
+var FavoriteFacade = require('../../../facades/favorite_facade');
 
 var pry = require('pryjs');
 const fetch = require('node-fetch');
@@ -199,19 +200,19 @@ router.get("/", function(req, res, next) {
         res.setHeader("Content-Type", "application/json");
         res.status(401).send({ error: "unauthorized" });
       }else{
-        if(user.City.length == 0){
-          res.setHeader("Content-Type", "application/json");
-          res.status(200).send( "No cities have been favorited" );
-        }else{
-          var userFavorites = []
-          for (let city of user.City){
-            favoriteInfo = {}
-            favoriteInfo["location"] = city.city
-            userFavorites.push(favoriteInfo)
-          }
-          res.setHeader("Content-Type", "application/json");
-          res.status(200).send(userFavorites);
-        }
+        return Promise.all(user.City.map(favorite => {
+          var favoriteForecast = new FavoriteFacade();
+          return favoriteForecast.updateForecast(favorite)
+        }))
+        .then(favorites => {
+          return Promise.all(favorites.map(favorite => {
+            return favorite.data
+          }))
+          .then(favorites => {
+            res.setHeader("Content-Type", "application/json");
+            res.status(200).send(JSON.stringify(favorites));
+          })
+        })
       }
     })
     .catch(error => {
